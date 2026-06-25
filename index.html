@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>레트로 교실: 랜덤 팀 & 순서 뽑기</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: 레트로 감성의 둥글고 단단한 한글 폰트 및 고전 폰트 느낌 -->
+    <link href="https://fonts.googleapis.com/css2?family=Jua&family=DungGeunMo&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'DungGeunMo', 'Jua', sans-serif;
+            background-color: #FAF6EE;
+            background-image: radial-gradient(#e5e7eb 1.5px, transparent 1.5px);
+            background-size: 24px 24px;
+        }
+        /* 네오 브루탈리즘 스타일 테두리 및 그림자 */
+        .retro-border {
+            border: 4px solid #000000;
+        }
+        .retro-shadow {
+            box-shadow: 6px 6px 0px 0px #000000;
+        }
+        .retro-shadow-sm {
+            box-shadow: 3px 3px 0px 0px #000000;
+        }
+        .retro-btn-yellow {
+            background-color: #FDE047;
+            transition: all 0.1s ease;
+        }
+        .retro-btn-yellow:active {
+            transform: translate(3px, 3px);
+            box-shadow: 3px 3px 0px 0px #000000;
+        }
+        .retro-btn-pink {
+            background-color: #F472B6;
+            transition: all 0.1s ease;
+        }
+        .retro-btn-pink:active {
+            transform: translate(3px, 3px);
+            box-shadow: 3px 3px 0px 0px #000000;
+        }
+        .retro-btn-cyan {
+            background-color: #2DD4BF;
+            transition: all 0.1s ease;
+        }
+        .retro-btn-cyan:active {
+            transform: translate(3px, 3px);
+            box-shadow: 3px 3px 0px 0px #000000;
+        }
+        .retro-btn-orange {
+            background-color: #FB923C;
+            transition: all 0.1s ease;
+        }
+        .retro-btn-orange:active {
+            transform: translate(3px, 3px);
+            box-shadow: 3px 3px 0px 0px #000000;
+        }
+        /* 스크롤바 디자인 */
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #FAF6EE;
+            border-left: 4px solid #000000;
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: #FDE047;
+            border: 4px solid #000000;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col text-slate-900 pb-12">
+
+    <!-- 상단 타이틀바 -->
+    <header class="w-full bg-[#FB7185] retro-border border-t-0 border-l-0 border-r-0 py-4 px-6 flex justify-between items-center z-10 sticky top-0">
+        <div class="flex items-center gap-3">
+            <span class="text-3xl text-white">🕹️</span>
+            <div>
+                <h1 class="text-2xl md:text-3xl text-black font-extrabold tracking-wider drop-shadow-[2px_2px_0px_rgba(255,255,255,1)]">
+                    레트로 교실: 랜덤 팀 & 순서 뽑기
+                </h1>
+                <p class="text-xs text-black font-bold hidden md:block">즐거운 모둠 구성과 공정한 발표 순서 정하기!</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <!-- 사운드 토글 -->
+            <button id="soundToggle" onclick="toggleSound()" class="retro-border retro-shadow-sm px-3 py-1 bg-white font-bold text-sm flex items-center gap-1 hover:bg-yellow-100">
+                <span id="soundIcon">🔊</span> <span class="hidden sm:inline">효과음 켜짐</span>
+            </button>
+            <div class="retro-border px-3 py-1 bg-black text-lime-400 font-mono text-sm hidden sm:block">
+                CLASS_LEVEL: A+
+            </div>
+        </div>
+    </header>
+
+    <!-- 메인 콘텐츠 영역 -->
+    <main class="max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow">
+        
+        <!-- 왼쪽 입력 컨트롤 판넬 (4/12) -->
+        <section class="lg:col-span-5 flex flex-col gap-6">
+            
+            <!-- 1. 명단 입력기 -->
+            <div class="bg-[#A7F3D0] retro-border retro-shadow p-5 flex flex-col gap-3">
+                <div class="flex justify-between items-center border-b-4 border-black pb-2">
+                    <h2 class="text-xl font-extrabold flex items-center gap-2">
+                        <span>📝</span> 1. 학생 명단 입력
+                    </h2>
+                    <span id="studentCount" class="bg-white retro-border px-2 py-0.5 text-xs font-bold">0명 입력됨</span>
+                </div>
+                
+                <p class="text-xs font-bold text-slate-700">이름을 줄바꿈(Enter)이나 쉼표(,)로 구분해서 적어주세요.</p>
+                
+                <textarea id="studentInput" class="w-full h-44 p-3 retro-border font-sans focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-sm" placeholder="예시:&#10;김민준, 이서연, 박지우, 최예은, 정민재, 윤동현, 한송이, 임채원, 조승우, 강다혜"></textarea>
+                
+                <div class="grid grid-cols-3 gap-2">
+                    <button onclick="loadSampleList(1)" class="retro-border retro-shadow-sm retro-btn-yellow py-1.5 text-xs font-bold text-black border-2 border-black">
+                        💡 10명 샘플
+                    </button>
+                    <button onclick="loadSampleList(2)" class="retro-border retro-shadow-sm retro-btn-yellow py-1.5 text-xs font-bold text-black border-2 border-black">
+                        💡 25명 샘플
+                    </button>
+                    <button onclick="clearStudents()" class="retro-border retro-shadow-sm bg-rose-400 py-1.5 text-xs font-bold text-black border-2 border-black hover:bg-rose-500 active:translate-y-0.5">
+                        🧹 비우기
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2. 매칭 옵션 설정 -->
+            <div class="bg-[#FBCFE8] retro-border retro-shadow p-5 flex flex-col gap-4">
+                <h2 class="text-xl font-extrabold border-b-4 border-black pb-2 flex items-center gap-2">
+                    <span>⚙️</span> 2. 뽑기 옵션 설정
+                </h2>
+
+                <!-- 모드 선택 탭 -->
+                <div class="grid grid-cols-3 gap-1 bg-black p-1 retro-border">
+                    <button id="tabTeamCount" onclick="switchMode('teamCount')" class="py-2 text-xs font-bold transition-all text-black bg-white">
+                        팀 개수 기준
+                    </button>
+                    <button id="tabMemberCount" onclick="switchMode('memberCount')" class="py-2 text-xs font-bold transition-all text-slate-400 bg-zinc-800 hover:text-white">
+                        팀원수 기준
+                    </button>
+                    <button id="tabSequence" onclick="switchMode('sequence')" class="py-2 text-xs font-bold transition-all text-slate-400 bg-zinc-800 hover:text-white">
+                        단순 순서만
+                    </button>
+                </div>
+
+                <!-- 옵션 상세 입력 (조건부 렌더링 형태) -->
+                <div class="bg-white retro-border p-4 min-h-[90px] flex flex-col justify-center">
+                    
+                    <!-- 팀 개수 기준 -->
+                    <div id="optTeamCount" class="flex flex-col gap-2">
+                        <label class="text-xs font-bold text-slate-700">만들고 싶은 총 팀의 개수:</label>
+                        <div class="flex items-center gap-2">
+                            <button onclick="adjustValue('numTeams', -1)" class="w-10 h-10 retro-border border-2 bg-slate-200 font-extrabold hover:bg-slate-300">-</button>
+                            <input type="number" id="numTeams" value="4" min="1" class="w-full text-center retro-border border-2 py-1.5 font-bold text-lg">
+                            <button onclick="adjustValue('numTeams', 1)" class="w-10 h-10 retro-border border-2 bg-slate-200 font-extrabold hover:bg-slate-300">+</button>
+                            <span class="font-bold text-sm whitespace-nowrap">개의 팀</span>
+                        </div>
+                    </div>
+
+                    <!-- 팀원 수 기준 -->
+                    <div id="optMemberCount" class="flex flex-col gap-2 hidden">
+                        <label class="text-xs font-bold text-slate-700">한 팀당 배정할 목표 인원수:</label>
+                        <div class="flex items-center gap-2">
+                            <button onclick="adjustValue('numMembers', -1)" class="w-10 h-10 retro-border border-2 bg-slate-200 font-extrabold hover:bg-slate-300">-</button>
+                            <input type="number" id="numMembers" value="4" min="1" class="w-full text-center retro-border border-2 py-1.5 font-bold text-lg">
+                            <button onclick="adjustValue('numMembers', 1)" class="w-10 h-10 retro-border border-2 bg-slate-200 font-extrabold hover:bg-slate-300">+</button>
+                            <span class="font-bold text-sm whitespace-nowrap">명씩</span>
+                        </div>
+                    </div>
+
+                    <!-- 단순 순서 정하기 -->
+                    <div id="optSequence" class="text-center py-2 hidden">
+                        <p class="text-sm font-bold text-indigo-600">입력된 명단의 순서를 완전히 무작위로 섞어 일렬로 배치합니다!</p>
+                        <p class="text-xs text-slate-500 mt-1">발표 순서, 청소 당번, 자리 바꾸기용</p>
+                    </div>
+
+                </div>
+
+                <!-- 실행 버튼 -->
+                <button onclick="startGenerate()" class="retro-border retro-shadow retro-btn-cyan w-full py-4 text-xl font-extrabold text-black hover:bg-teal-300 border-4 border-black">
+                    🎰 무작위 뽑기 스타트! 🎰
+                </button>
+            </div>
+
+            <!-- 미니 알림판 -->
+            <div id="alertBox" class="bg-amber-100 retro-border retro-shadow-sm p-3 text-xs font-bold border-2 border-black flex items-start gap-2 hidden">
+                <span class="text-base">⚠️</span>
+                <span id="alertMessage" class="text-slate-800 self-center">메시지가 표시됩니다.</span>
+            </div>
+
+        </section>
+
+        <!-- 오른쪽 결과 출력 판넬 (7/12) -->
+        <section class="lg:col-span-7 flex flex-col gap-6">
+            
+            <div class="bg-white retro-border retro-shadow p-5 flex flex-col gap-4 min-h-[500px]">
+                
+                <!-- 상단 헤더 -->
+                <div class="flex justify-between items-center border-b-4 border-black pb-3">
+                    <h2 class="text-2xl font-extrabold flex items-center gap-2">
+                        <span>🏆</span> 뽑기 결과 판보드
+                    </h2>
+                    <div class="flex gap-2">
+                        <button onclick="copyToClipboard()" class="retro-border retro-shadow-sm px-3 py-1 bg-indigo-200 hover:bg-indigo-300 text-xs font-bold border-2 border-black">
+                            📋 텍스트 복사
+                        </button>
+                        <button id="btnOrder" onclick="toggleTeamOrder()" class="retro-border retro-shadow-sm px-3 py-1 bg-amber-300 hover:bg-amber-400 text-xs font-bold border-2 border-black hidden">
+                            🎲 발표 순서 정하기
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 대기 / 셔플링 상태 애니메이션 -->
+                <div id="statusPlaceholder" class="flex flex-col items-center justify-center py-24 text-center">
+                    <span class="text-7xl animate-bounce">🎲</span>
+                    <h3 class="text-2xl font-bold mt-6">준비 완료!</h3>
+                    <p class="text-sm text-slate-500 max-w-xs mt-2">왼쪽에서 학생 이름을 넣고 대망의 뽑기 버튼을 눌러주세요!</p>
+                </div>
+
+                <!-- 셔플링 화면 -->
+                <div id="shufflingView" class="hidden flex flex-col items-center justify-center py-20">
+                    <div class="relative w-40 h-40 flex items-center justify-center">
+                        <!-- 레트로 느낌 로딩 스피너 및 텍스트 롤러 -->
+                        <div class="absolute w-full h-full rounded-full border-8 border-dashed border-black animate-spin"></div>
+                        <span class="text-4xl">⚡</span>
+                    </div>
+                    <div class="mt-8 text-center">
+                        <h3 class="text-2xl font-bold text-rose-500 animate-pulse">데이터 섞는 중...</h3>
+                        <div id="shufflingName" class="mt-3 px-6 py-2 bg-yellow-200 retro-border font-bold text-lg inline-block">
+                            준비...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 최종 결과 화면 (실제 표시 영역) -->
+                <div id="resultContent" class="hidden flex flex-col gap-6">
+                    
+                    <!-- 팀 순서 배정 결과 전광판 (있을 때만 표시) -->
+                    <div id="teamOrderPanel" class="bg-yellow-100 retro-border p-3 border-2 border-black hidden">
+                        <div class="font-bold text-xs text-rose-500 mb-1">📢 무작위로 추첨된 팀별 발표 순서:</div>
+                        <div id="teamOrderList" class="flex flex-wrap gap-2 text-sm font-bold">
+                            <!-- 여기에 발표 순서 배정 결과 동적 삽입 -->
+                        </div>
+                    </div>
+
+                    <!-- 결과 그리드 (팀 또는 순서 리스트) -->
+                    <div id="resultsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- 동적으로 팀 카드 혹은 순서 카드가 들어갑니다 -->
+                    </div>
+
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 바닥글 -->
+    <footer class="text-center text-xs font-bold text-slate-500 mt-auto pt-6">
+        <p>© 2026 Retro Classroom App. Made for Teachers with Love ❤️</p>
+    </footer>
+
+    <!-- 웹 오디오 API 기반 사운드 제어 JS -->
+    <script>
+        // 글로벌 상태 관리
+        let currentMode = 'teamCount'; // 'teamCount' | 'memberCount' | 'sequence'
+        let students = [];
+        let generatedTeams = []; // [{ id: 1, name: "1팀", members: [] }]
+        let generatedSequence = []; // ["학생1", "학생2", ...]
+        let teamOrder = []; // 팀 발표 순서 리스트
+        let soundOn = true;
+
+        // 웹 오디오 신디사이저 (레트로 8비트 사운드)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playRetroSound(type) {
+            if (!soundOn) return;
+            
+            try {
+                // AudioContext 활성화 보장 (브라우저 보안 대처)
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'click') {
+                    // 단음 짧은 삑 소리
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(440, audioCtx.currentTime); // A4
+                    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.1);
+                } else if (type === 'shuffle') {
+                    // 지직거리는 효과음 (노이즈 느낌 또는 빠른 피치 전환)
+                    osc.type = 'sawtooth';
+                    const now = audioCtx.currentTime;
+                    osc.frequency.setValueAtTime(150 + Math.random() * 300, now);
+                    gain.gain.setValueAtTime(0.05, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                    osc.start();
+                    osc.stop(now + 0.08);
+                } else if (type === 'success') {
+                    // 고전 승리 멜로디 (도-미-솔-도)
+                    const now = audioCtx.currentTime;
+                    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                    notes.forEach((freq, idx) => {
+                        const noteOsc = audioCtx.createOscillator();
+                        const noteGain = audioCtx.createGain();
+                        noteOsc.connect(noteGain);
+                        noteGain.connect(audioCtx.destination);
+                        
+                        noteOsc.type = 'sine';
+                        noteOsc.frequency.setValueAtTime(freq, now + idx * 0.12);
+                        noteGain.gain.setValueAtTime(0.1, now + idx * 0.12);
+                        noteGain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.12 + 0.25);
+                        
+                        noteOsc.start(now + idx * 0.12);
+                        noteOsc.stop(now + idx * 0.12 + 0.25);
+                    });
+                } else if (type === 'bell') {
+                    // 학교 종소리 (솔솔라라솔솔미)
+                    const now = audioCtx.currentTime;
+                    const notes = [392.00, 392.00, 440.00, 440.00, 392.00, 392.00, 329.63]; // G4, G4, A4, A4, G4, G4, E4
+                    notes.forEach((freq, idx) => {
+                        const noteOsc = audioCtx.createOscillator();
+                        const noteGain = audioCtx.createGain();
+                        noteOsc.connect(noteGain);
+                        noteGain.connect(audioCtx.destination);
+                        
+                        noteOsc.type = 'triangle';
+                        noteOsc.frequency.setValueAtTime(freq, now + idx * 0.3);
+                        noteGain.gain.setValueAtTime(0.12, now + idx * 0.3);
+                        noteGain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.3 + 0.4);
+                        
+                        noteOsc.start(now + idx * 0.3);
+                        noteOsc.stop(now + idx * 0.3 + 0.4);
+                    });
+                }
+            } catch (e) {
+                console.log("Audio Error: ", e);
+            }
+        }
+
+        function toggleSound() {
+            soundOn = !soundOn;
+            const btn = document.getElementById('soundToggle');
+            const icon = document.getElementById('soundIcon');
+            if (soundOn) {
+                icon.innerText = '🔊';
+                btn.classList.add('bg-white');
+                btn.classList.remove('bg-rose-200');
+                btn.querySelector('span:last-child').innerText = '효과음 켜짐';
+                playRetroSound('click');
+            } else {
+                icon.innerText = '🔇';
+                btn.classList.remove('bg-white');
+                btn.classList.add('bg-rose-200');
+                btn.querySelector('span:last-child').innerText = '효과음 꺼짐';
+            }
+        }
+
+        // 쌤플 명단 주입
+        const sampleLists = {
+            1: ["민준", "서연", "지우", "예은", "민재", "동현", "송이", "채원", "승우", "다혜"],
+            2: [
+                "김민준", "이서연", "박지우", "최예은", "정민재", 
+                "윤동현", "한송이", "임채원", "조승우", "강다혜",
+                "신우진", "안소희", "황민우", "오지현", "송준호", 
+                "배수지", "유재석", "강호동", "신동엽", "장도연",
+                "이효리", "김종국", "하동훈", "송지효", "지석진"
+            ]
+        };
+
+        function loadSampleList(type) {
+            playRetroSound('bell');
+            const input = document.getElementById('studentInput');
+            input.value = sampleLists[type].join(', ');
+            updateStudentCount();
+            showAlert(`샘플 데이터 ${sampleLists[type].length}명을 불러왔습니다!`, 'info');
+        }
+
+        function clearStudents() {
+            playRetroSound('click');
+            document.getElementById('studentInput').value = '';
+            updateStudentCount();
+            showAlert('명단을 비웠습니다.', 'info');
+        }
+
+        // 입력된 학생 수 계산 및 표시
+        function updateStudentCount() {
+            const list = getParsedStudents();
+            document.getElementById('studentCount').innerText = `${list.length}명 입력됨`;
+        }
+
+        // 실시간 학생수 리스너 등록
+        document.getElementById('studentInput').addEventListener('input', updateStudentCount);
+
+        // 정규식 가공하여 순수 이름 리스트만 배열로 받기
+        function getParsedStudents() {
+            const rawVal = document.getElementById('studentInput').value;
+            // 쉼표, 공백, 줄바꿈, 탭 등으로 스플릿 후 공백 제거
+            return rawVal
+                .split(/[\n,/\t\s]+/)
+                .map(name => name.trim())
+                .filter(name => name.length > 0);
+        }
+
+        // 값 올리고 내리기 버튼 헬퍼
+        function adjustValue(inputId, change) {
+            playRetroSound('click');
+            const input = document.getElementById(inputId);
+            let val = parseInt(input.value) || 2;
+            val += change;
+            if (val < 1) val = 1;
+            input.value = val;
+        }
+
+        // 탭 스위칭 모드 설정
+        function switchMode(mode) {
+            playRetroSound('click');
+            currentMode = mode;
+            
+            // 탭 스타일 리셋
+            const tabs = {
+                teamCount: document.getElementById('tabTeamCount'),
+                memberCount: document.getElementById('tabMemberCount'),
+                sequence: document.getElementById('tabSequence')
+            };
+            const options = {
+                teamCount: document.getElementById('optTeamCount'),
+                memberCount: document.getElementById('optMemberCount'),
+                sequence: document.getElementById('optSequence')
+            };
+
+            Object.keys(tabs).forEach(k => {
+                if (k === mode) {
+                    tabs[k].className = "py-2 text-xs font-bold transition-all text-black bg-white";
+                    options[k].classList.remove('hidden');
+                } else {
+                    tabs[k].className = "py-2 text-xs font-bold transition-all text-slate-400 bg-zinc-800 hover:text-white";
+                    options[k].classList.add('hidden');
+                }
+            });
+        }
+
+        // 커스텀 알림창 띄우기
+        function showAlert(msg, type = 'warning') {
+            const alertBox = document.getElementById('alertBox');
+            const alertMessage = document.getElementById('alertMessage');
+            alertMessage.innerText = msg;
+            alertBox.classList.remove('hidden');
+            
+            if (type === 'warning') {
+                alertBox.className = "bg-rose-100 retro-border retro-shadow-sm p-3 text-xs font-bold border-2 border-black flex items-start gap-2";
+            } else {
+                alertBox.className = "bg-amber-100 retro-border retro-shadow-sm p-3 text-xs font-bold border-2 border-black flex items-start gap-2";
+            }
+        }
+
+        // 배열 피셔-예이츠 셔플
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // 메인 생성 함수
+        function startGenerate() {
+            students = getParsedStudents();
+            
+            if (students.length === 0) {
+                playRetroSound('click');
+                showAlert('명단을 먼저 입력해 주세요! 이름이 한 글자 이상이어야 합니다.');
+                return;
+            }
+
+            // 알림창 초기화
+            document.getElementById('alertBox').classList.add('hidden');
+            
+            // UI 상태 스위칭 -> 로딩 애니메이션
+            document.getElementById('statusPlaceholder').classList.add('hidden');
+            document.getElementById('resultContent').classList.add('hidden');
+            document.getElementById('shufflingView').classList.remove('hidden');
+            document.getElementById('btnOrder').classList.add('hidden');
+            document.getElementById('teamOrderPanel').classList.add('hidden');
+            teamOrder = [];
+
+            // 셔플 이펙트 반복재생용 인터벌
+            let shuffleCount = 0;
+            const maxShuffle = 15;
+            const shuffleInterval = setInterval(() => {
+                // 임의의 학생 이름을 롤링하여 칠판에 보여줌
+                const tempIndex = Math.floor(Math.random() * students.length);
+                document.getElementById('shufflingName').innerText = `✨ ${students[tempIndex]} ✨`;
+                playRetroSound('shuffle');
+                shuffleCount++;
+
+                if (shuffleCount >= maxShuffle) {
+                    clearInterval(shuffleInterval);
+                    executeDistribution();
+                }
+            }, 100);
+        }
+
+        // 실제 모드별 처리 분기
+        function executeDistribution() {
+            const shuffled = shuffleArray(students);
+
+            if (currentMode === 'teamCount') {
+                const numTeams = parseInt(document.getElementById('numTeams').value) || 2;
+                distributeIntoTeams(shuffled, numTeams);
+            } else if (currentMode === 'memberCount') {
+                const numMembers = parseInt(document.getElementById('numMembers').value) || 4;
+                // 필요한 팀 개수 계산: 올림 처리로 남는 인원도 팀 생성
+                const numTeams = Math.ceil(shuffled.length / numMembers);
+                distributeIntoTeams(shuffled, numTeams);
+            } else {
+                // 단순 순서 정하기
+                generatedSequence = shuffled;
+                renderSequence();
+            }
+
+            // 성공 효과음 및 화면 띄우기
+            playRetroSound('success');
+            document.getElementById('shufflingView').classList.add('hidden');
+            document.getElementById('resultContent').classList.remove('hidden');
+        }
+
+        // 팀 나누기 로직
+        function distributeIntoTeams(shuffledList, teamCount) {
+            if (teamCount < 1) teamCount = 1;
+
+            // 팀 기본 뼈대 빌드
+            generatedTeams = Array.from({ length: teamCount }, (_, i) => ({
+                id: i + 1,
+                name: `🎮 ${i + 1} 모둠`,
+                members: []
+            }));
+
+            // 라운드 로빈 방식으로 고르게 배정 (인원 차이가 1명 이하로 유지됨)
+            shuffledList.forEach((student, idx) => {
+                const teamIndex = idx % teamCount;
+                generatedTeams[teamIndex].members.push(student);
+            });
+
+            renderTeams();
+            document.getElementById('btnOrder').classList.remove('hidden');
+        }
+
+        // 결과 렌더러: 팀 레이아웃
+        function renderTeams() {
+            const container = document.getElementById('resultsGrid');
+            container.className = "grid grid-cols-1 sm:grid-cols-2 gap-4"; // 2열 고정
+            container.innerHTML = '';
+
+            // 각 팀 색상 테마 배정용 리스트 (네오 브루탈리즘 감성 배경색 조합)
+            const cardBgColors = ['bg-[#C084FC]', 'bg-[#60A5FA]', 'bg-[#F472B6]', 'bg-[#34D399]', 'bg-[#FB923C]', 'bg-[#FBBF24]'];
+
+            generatedTeams.forEach((team, teamIdx) => {
+                const colorClass = cardBgColors[teamIdx % cardBgColors.length];
+                
+                const card = document.createElement('div');
+                card.className = `${colorClass} retro-border retro-shadow p-4 flex flex-col gap-3`;
+                
+                // 카드 상단 영역 (모둠명 & 리더 표시 가능)
+                const header = document.createElement('div');
+                header.className = "flex justify-between items-center border-b-2 border-black pb-1.5";
+                
+                const title = document.createElement('h3');
+                title.className = "font-extrabold text-lg text-black";
+                title.innerText = team.name;
+
+                const meta = document.createElement('span');
+                meta.className = "bg-white retro-border border text-xs font-bold px-1.5 py-0.5";
+                meta.innerText = `${team.members.length}명`;
+
+                header.appendChild(title);
+                header.appendChild(meta);
+                card.appendChild(header);
+
+                // 멤버 리스트 컨테이너
+                const list = document.createElement('div');
+                list.className = "flex flex-wrap gap-2 py-1 min-h-[50px] bg-white bg-opacity-40 p-2 rounded-lg border border-dashed border-black";
+                
+                if (team.members.length === 0) {
+                    list.innerHTML = `<span class="text-xs text-slate-600 font-bold italic w-full text-center py-2">팀원이 없습니다.</span>`;
+                } else {
+                    team.members.forEach((member, memberIdx) => {
+                        const mTag = document.createElement('div');
+                        mTag.className = "bg-white retro-border border-2 px-2.5 py-1 text-sm font-bold flex items-center gap-1.5 shadow-[1px_1px_0px_rgba(0,0,0,1)]";
+                        mTag.innerText = member;
+
+                        // 멤버 이동 조정용 조그만 화살표/컨트롤러 추가 (사후 강사 수동 커스텀용)
+                        const ctrlBtn = document.createElement('button');
+                        ctrlBtn.className = "text-[10px] text-rose-500 hover:text-rose-700 transition font-mono";
+                        ctrlBtn.innerHTML = "⇆";
+                        ctrlBtn.title = "다른 팀으로 수동 이동";
+                        ctrlBtn.onclick = (e) => {
+                            e.stopPropagation();
+                            moveMemberPrompt(teamIdx, memberIdx);
+                        };
+                        mTag.appendChild(ctrlBtn);
+
+                        list.appendChild(mTag);
+                    });
+                }
+                card.appendChild(list);
+
+                container.appendChild(card);
+            });
+        }
+
+        // 결과 렌더러: 단순 순서 리스트
+        function renderSequence() {
+            const container = document.getElementById('resultsGrid');
+            container.className = "grid grid-cols-1 gap-2"; // 1열 리스트
+            container.innerHTML = '';
+
+            const card = document.createElement('div');
+            card.className = "bg-amber-100 retro-border retro-shadow p-5 flex flex-col gap-3 col-span-full";
+            
+            const title = document.createElement('h3');
+            title.className = "font-extrabold text-xl border-b-2 border-black pb-2 text-center";
+            title.innerText = "🎯 결정된 전체 무작위 순서";
+            card.appendChild(title);
+
+            const listContainer = document.createElement('ol');
+            listContainer.className = "flex flex-col gap-2 max-h-[400px] overflow-y-auto pr-2 mt-2";
+
+            generatedSequence.forEach((name, idx) => {
+                const item = document.createElement('li');
+                // 메달 순서 색상 차별화
+                let medalBg = "bg-white";
+                if (idx === 0) medalBg = "bg-yellow-300";
+                else if (idx === 1) medalBg = "bg-slate-300";
+                else if (idx === 2) medalBg = "bg-amber-400";
+
+                item.className = `${medalBg} retro-border border-2 p-3 font-bold flex justify-between items-center hover:translate-x-1 transition`;
+                item.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="bg-black text-white w-6 h-6 flex items-center justify-center text-xs font-bold rounded-full">${idx + 1}</span>
+                        <span class="text-base">${name}</span>
+                    </div>
+                    <span class="text-xs text-slate-500">순서확정</span>
+                `;
+                listContainer.appendChild(item);
+            });
+
+            card.appendChild(listContainer);
+            container.appendChild(card);
+        }
+
+        // 강사 수동 멤버 위치 조정 모달/프롬프트 기능
+        function moveMemberPrompt(fromTeamIdx, memberIdx) {
+            playRetroSound('click');
+            const memberName = generatedTeams[fromTeamIdx].members[memberIdx];
+            
+            // 이동할 대상 팀 선택용 커스텀 심플 모달 (기존 복잡한 모달 배제, 신속한 선택)
+            let promptText = `"${memberName}" 학생을 어디로 보낼까요?\n이동할 팀의 번호를 입력하세요 (1 ~ ${generatedTeams.length})\n\n`;
+            generatedTeams.forEach((team, idx) => {
+                promptText += `${idx + 1}번: ${team.name}\n`;
+            });
+
+            const targetInput = prompt(promptText);
+            if (targetInput === null) return; // 취소
+
+            const targetTeamNum = parseInt(targetInput);
+            if (isNaN(targetTeamNum) || targetTeamNum < 1 || targetTeamNum > generatedTeams.length) {
+                alert("잘못된 모둠 번호입니다!");
+                return;
+            }
+
+            const toTeamIdx = targetTeamNum - 1;
+            if (fromTeamIdx === toTeamIdx) return; // 동일 팀이면 변경 없음
+
+            // 이동 처리
+            generatedTeams[fromTeamIdx].members.splice(memberIdx, 1);
+            generatedTeams[toTeamIdx].members.push(memberName);
+
+            // 다시 그리기
+            renderTeams();
+            playRetroSound('success');
+            
+            // 발표 순서가 활성화 되어있었을 경우 갱신
+            if (teamOrder.length > 0) {
+                updateTeamOrderView();
+            }
+        }
+
+        // 팀 발표 순서 정하기
+        function toggleTeamOrder() {
+            playRetroSound('bell');
+            
+            // 팀들의 인덱스를 구해서 무작위로 섞음
+            const teamIndices = generatedTeams.map((_, i) => i);
+            const shuffledIndices = shuffleArray(teamIndices);
+            
+            teamOrder = shuffledIndices.map(idx => ({
+                teamId: generatedTeams[idx].id,
+                teamName: generatedTeams[idx].name
+            }));
+
+            updateTeamOrderView();
+        }
+
+        // 팀 발표 순서 전광판 갱신
+        function updateTeamOrderView() {
+            const panel = document.getElementById('teamOrderPanel');
+            const list = document.getElementById('teamOrderList');
+            panel.classList.remove('hidden');
+            list.innerHTML = '';
+
+            teamOrder.forEach((order, index) => {
+                const badge = document.createElement('span');
+                badge.className = "bg-white retro-border border-2 px-3 py-1 text-black font-extrabold flex items-center gap-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]";
+                badge.innerHTML = `<span class="bg-indigo-600 text-white rounded px-1.5 text-xs mr-1">${index + 1}등</span> ${order.teamName}`;
+                list.appendChild(badge);
+            });
+        }
+
+        // 최종 결과 텍스트 복사 (클립보드 API 폴백 지원)
+        function copyToClipboard() {
+            playRetroSound('click');
+            let copyText = "🎮 [레트로 교실 랜덤 뽑기 결과] 🎮\n\n";
+
+            if (currentMode === 'sequence') {
+                copyText += "🎯 무작위 순서 정하기 결과:\n";
+                generatedSequence.forEach((name, i) => {
+                    copyText += `${i + 1}순위: ${name}\n`;
+                });
+            } else {
+                copyText += "👥 모둠 구성 결과:\n";
+                generatedTeams.forEach((team) => {
+                    copyText += `▶ ${team.name} (${team.members.length}명):\n   - ${team.members.join(', ')}\n\n`;
+                });
+
+                if (teamOrder.length > 0) {
+                    copyText += "🎲 발표 순서:\n";
+                    teamOrder.forEach((order, index) => {
+                        copyText += `   - ${index + 1}등: ${order.teamName}\n`;
+                    });
+                }
+            }
+
+            copyText += "\n즐거운 활동 되세요! ✨";
+
+            // 클립보드 안전 복사 (아이프레임 환경 고려)
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = copyText;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            try {
+                document.execCommand('copy');
+                showAlert('결과가 클립보드에 무사히 복사되었습니다!', 'info');
+            } catch (err) {
+                showAlert('클립보드 복사에 실패했습니다. 수동으로 복사해주세요.', 'warning');
+            }
+            document.body.removeChild(tempTextArea);
+        }
+
+        // 초기 시작 세팅
+        window.onload = function() {
+            // 데모용 기본 10인 리스트 사전 세팅
+            const input = document.getElementById('studentInput');
+            input.value = sampleLists[1].join(', ');
+            updateStudentCount();
+        };
+    </script>
+</body>
+</html>
